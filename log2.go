@@ -62,25 +62,35 @@ func PrintFuncSet(level int) {
 	if level == 0 {
 		level = 99999
 	}
-	fmt.Println(commonColor("------------------------begin------------------------"))
-	defer fmt.Println(commonColor("-------------------------end-------------------------\n"))
+
+	funcInfoList := []string{}
+	defer func() {
+		fmt.Println(commonColor("\n ------------------------begin------------------------"))
+		for i := len(funcInfoList) - 1; i >= 0; i-- {
+			fmt.Print(commonColor(funcInfoList[i]))
+		}
+		fmt.Println(commonColor("-------------------------end-------------------------\n"))
+	}()
+
 	for i := 1; i < level+1; i++ {
 		pc, file, line, ok := runtime.Caller(i)
 		if !ok {
 			return
 		}
 		fn := runtime.FuncForPC(pc)
-		fmt.Print(commonColor(fmt.Sprintf("%s:%d [%s]\n", simplePath(file), line, simpleFunc(fn.Name()))))
-		if strings.HasSuffix(fn.Name(), "main") {
+		switch {
+		case strings.HasSuffix(fn.Name(), "main") ||
+			strings.HasSuffix(fn.Name(), "goexit"):
 			return
 		}
+		funcInfoList = append(funcInfoList, fmt.Sprintf("%s:%d [%s]\n", simplePath(file), line, simpleFunc(fn.Name())))
 	}
 }
 
 func PrintFunc(level int, args ...interface{}) {
 	pc, _, _, _ := runtime.Caller(level + 1)
 	fn := runtime.FuncForPC(pc)
-	fmt.Print(commonColor(fmt.Sprintf("[%s] ", simpleFunc(fn.Name())) + fmt.Sprintln(args...)))
+	fmt.Print(commonColor(fmt.Sprintf("%s [%s] ", time.Now().Format("15:04:05.999"), simpleFunc(fn.Name())) + fmt.Sprintln(args...)))
 }
 
 //utils
